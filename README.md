@@ -1,115 +1,74 @@
 # AI News Analyst
 
-An intelligent news analysis system that combines Retrieval-Augmented Generation (RAG) with Wikipedia search to provide comprehensive answers about current events and general knowledge.
+> **An intelligent news analysis system that automatically routes questions to either RAG-powered news search or Wikipedia knowledge base, delivering accurate answers in ~10 seconds with 96% routing accuracy and 9/10 quality scores.**
 
-## 🏗️ Project Structure
+## Quick Intro
 
+AI News Analyst is a question-answering system that intelligently combines:
+- **RAG (Retrieval-Augmented Generation)** for recent tech news from Techmeme
+- **Wikipedia Search** for general knowledge and historical information
+- **Smart Routing** that automatically determines the best source for your query
+
+Built with LangGraph, ChromaDB, and OpenAI, the system achieves **9/10 relevancy** and **9/10 correctness** while maintaining fast response times.
+
+##  MVP-2  Summary
+
+| Metric | MVP-1 | MVP-2 | Improvement |
+|--------|-------|-------|-------------|
+| **Relevancy Score** | 6.45/10 | **9.06/10** | **+40%**  |
+| **Correctness Score** | 6.1/10 | **8.98/10** | **+47%**  |
+| **Routing Accuracy** | 100% | **96%** |  |
+| **Avg Response Time** | 12.72s | **10.55s** | **-17%**  |
+| **Test Coverage** | 20 examples | **50 examples** |  |
+
+### What Changed
+
+- **RAG Optimization:** Chunk size 100 → 500 characters
+  - Larger chunks preserve complete context and sentences
+  - Enables accurate, comprehensive LLM responses
+  - Better quality AND faster execution
+
+- **Expanded Testing:** 50 diverse test cases across difficulty levels
+  - 25 RAG (recent news) + 25 Wikipedia (general knowledge)
+  - Structured ground truth with difficulty ratings
+  - More edge cases and real-world scenarios
+
+ *For detailed analysis, see [documents/MVP-2.md](documents/MVP-2.md)*
+
+
+## How It Works
+
+```mermaid
+graph LR
+    A[User Query] --> B{Smart Router<br/>GPT-4o-mini}
+    
+    B -->|Recent News| C[RAG Pipeline]
+    B -->|General Knowledge| D[Wikipedia API]
+    
+    C --> E[Techmeme RSS]
+    E --> F[ChromaDB<br/>Vector Search]
+    F --> G[Response Generator<br/>GPT-4o-mini]
+    
+    D --> H[Article Content]
+    H --> G
+    
+    G --> I[Final Answer<br/>~10s]
+    
+    style A fill:#4A90E2,color:#fff
+    style B fill:#F5A623,color:#fff
+    style C fill:#7ED321
+    style D fill:#BD10E0,color:#fff
+    style G fill:#F8E71C
+    style I fill:#4A90E2,color:#fff
 ```
-AI-News-Analyst/
-├── src/                          # Source code
-│   ├── data_sources/            # Data source modules
-│   │   ├── techmeme_rss_parser.py    # Techmeme RSS feed parser
-│   │   └── wikipedia_search.py       # Wikipedia search functionality
-│   ├── rag/                     # RAG (Retrieval-Augmented Generation)
-│   │   └── vector_store_manager.py   # Vector database management
-│   ├── workflow/               # Workflow orchestration
-│   │   └── news_analysis_workflow.py # Main LangGraph workflow
-│   └── utils/                   # Utility functions
-│       └── config.py            # Configuration settings
-├── data/                        # Data storage
-│   ├── vector_db/              # ChromaDB vector database
-│   └── outputs/                # Generated outputs & results
-├── notebooks/                   # Testing files
-│   └── notebook_testing.ipynb  # Jupyter notebook for testing
-├── docs/                        # Documentation
-├── main.py                      # Main CLI entry point
-├── evaluate.py                  # Evaluation script
-├── test.py                      # Evaluation functions
-├── EVALUATION.md               # Evaluation guide
-└── README.md                    # This file
-```
 
-## 🚀 Features
+**Flow:** Question → Route (RAG or Wiki) → Retrieve Context → Generate Answer
+
+## Features
 
 - **Smart Routing**: Automatically determines whether to use RAG for recent news or Wikipedia for general knowledge
 - **RAG Integration**: Retrieves and analyzes recent news from Techmeme RSS feeds
 - **Wikipedia Search**: Accesses general knowledge and historical information
 - **Vector Database**: Uses ChromaDB for efficient document storage and retrieval
 - **LangGraph Workflow**: Orchestrates the entire analysis process
-
-## 📋 Prerequisites
-
-- Python 3.8+
-- OpenAI API key
-- Required Python packages (see requirements.txt)
-
-## 🎯 Usage
-
-### Web Interface (Recommended)
-
-Run the simple web UI:
-```bash
-python app.py
-```
-
-Then open your browser to `http://localhost:7860`
-
-### Command Line Interface
-
-Run the main application:
-```bash
-python main.py
-```
-
-### Programmatic Usage
-
-```python
-from src.workflow.news_analysis_workflow import run_news_analysis
-
-# Analyze a question
-result = run_news_analysis("What are the latest developments in AI?")
-print(result)
-```
-
-## 🔧 Components
-
-### Data Sources
-- **Techmeme RSS Parser** (`src/data_sources/techmeme_rss_parser.py`): Fetches and processes news from Techmeme RSS feeds
-- **Wikipedia Search** (`src/data_sources/wikipedia_search.py`): Provides access to Wikipedia knowledge
-
-### RAG System
-- **Vector Store Manager** (`src/rag/vector_store_manager.py`): Manages ChromaDB vector database for news embeddings
-
-### Workflow
-- **News Analysis Workflow** (`src/workflow/news_analysis_workflow.py`): Main LangGraph workflow that orchestrates the entire process
-- **Route Decision** (`src/workflow/route_decision.py`): Determines whether to use RAG or Wikipedia based on the query
-
-## 🧪 Testing & Evaluation
-
-Evaluate the system on the test dataset (20 examples):
-
-```bash
-# Run full evaluation on all 20 examples
-python evaluate.py
-
-# Run on a subset for faster testing
-python evaluate.py --num-examples 5
-
-# Save results for comparison
-python evaluate.py --output data/outputs/baseline_v1.json
-```
-
-Compare performance across different runs:
-
-
-
-## 📊 Data Flow
-
-1. **User Input**: User asks a question
-2. **Routing**: System determines if question is about recent news or general knowledge
-3. **Data Retrieval**: 
-   - For news: Retrieves relevant articles from vector database
-   - For general knowledge: Searches Wikipedia
-4. **Analysis**: LLM processes the retrieved information
-5. **Response**: Returns comprehensive answer
 
