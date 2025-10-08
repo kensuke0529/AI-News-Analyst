@@ -1,11 +1,10 @@
 import os
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from src.rag.vector_store_manager import rag_news
+from langchain_chroma import Chroma
 from src.data_sources.wikipedia_search import wiki_search
 from dotenv import load_dotenv
 
@@ -14,9 +13,8 @@ openai_api_key = os.environ["OPENAI_API_KEY"]
 
 class State(TypedDict):
     prompt: str
-    rag_doc: str
-    wiki_doc: str
     route_choice: str
+    retrieved_docs: str
     response: str
 
 def route_decision(prompt: str) -> str:
@@ -40,25 +38,64 @@ def route_decision(prompt: str) -> str:
     response = llm.invoke(routing_prompt)
     return response.content.strip().lower()
 
-def rag_node(prompt: str) -> str:
-    """Function for RAG-based news analysis"""
-    retriever = rag_news(prompt)
+def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
+    """
+    Query the pre-populated vector DB - NO extraction/fetching here.
+    This assumes the DB has been populated by the background extraction job.
+    """
+    embedding_model = OpenAIEmbeddings(
+        api_key=openai_api_key, 
+        model="text-embedding-3-small"
+    )
+    
+    # Load existing DB (read-only)
+    vector_store = Chroma(
+        persist_directory=persist_directory,
+        embedding_function=embedding_model
+    )
+    
+    # Retrieve relevant docs
+    retriever = vector_store.as_retriever(
+        search_type='similarity', 
+        search_kwargs={"k": 3}
+    )
+    
     docs = retriever.invoke(prompt)
-    return "\n\n".join([doc.page_content for doc in docs])
+    
+    # Format with metadata for better attribution
+    formatted_docs = []
+    for doc in docs:
+        source = doc.metadata.get('source', 'unknown')
+        title = doc.metadata.get('title', '')
+        pub_date = doc.metadata.get('pub_date', '')
+        formatted_docs.append(
+            f"[{source} - {pub_date}] {title}\n{doc.page_content}"
+        )
+    
+    return "\n\n".join(formatted_docs)
 
 def wiki_node(prompt: str) -> str:
     """Function for Wikipedia search"""
     return wiki_search(prompt)
 
-def writing_node(prompt: str, rag_doc: str = "", wiki_doc: str = "") -> str:
-    """Function for generating final response"""
+def router_node(state: State):
+    """Router node that uses the route_decision function"""
+    route_choice = route_decision(state['prompt'])
+    return {"route_choice": route_choice}
+
+def rag_query_node(state: State):
+    """Query pre-populated vector DB - NO extraction"""
+    docs = query_vector_db(state['prompt'])
+    return {"retrieved_docs": docs}
+
+def wiki_query_node(state: State):
+    """Query Wikipedia"""
+    docs = wiki_node(state['prompt'])
+    return {"retrieved_docs": docs}
+
+def response_generation_node(state: State):
+    """Generate response from retrieved documents"""
     llm = ChatOpenAI(model='gpt-4o-mini', api_key=openai_api_key, temperature=0)
-    
-    context = ""
-    if rag_doc:
-        context += f"Recent News Context:\n{rag_doc}\n\n"
-    if wiki_doc:
-        context += f"Wikipedia Context:\n{wiki_doc}\n\n"
     
     prompt_template = ChatPromptTemplate.from_template("""
     You are an AI News Analyst. Use the following context to provide a comprehensive response.
@@ -69,58 +106,34 @@ def writing_node(prompt: str, rag_doc: str = "", wiki_doc: str = "") -> str:
     User Question: {question}
     
     Provide a detailed, well-structured response that incorporates relevant information from the context.
+    When citing information, reference the source and date when available.
     """)
     
     chain = (
-        {"context": lambda x: context, "question": RunnablePassthrough()}
+        {
+            "context": lambda x: state['retrieved_docs'], 
+            "question": lambda x: state['prompt']
+        }
         | prompt_template
         | llm
         | StrOutputParser()
     )
     
-    return chain.invoke(prompt)
-
-def router_node(state: State):
-    """Router node that uses the route_decision function"""
-    route_choice = route_decision(state['prompt'])
-    return {"route_choice": route_choice}
-
-def rag_processing_node(state: State):
-    """RAG processing node"""
-    rag_doc = rag_node(state['prompt'])
-    return {"rag_doc": rag_doc}
-
-def wiki_processing_node(state: State):
-    """Wiki processing node"""
-    wiki_doc = wiki_node(state['prompt'])
-    return {"wiki_doc": wiki_doc}
-
-def final_writing_node(state: State):
-    """Final writing node"""
-    response = writing_node(
-        state['prompt'],
-        state.get('rag_doc', ''),
-        state.get('wiki_doc', '')
-    )
+    response = chain.invoke({})
     return {"response": response}
 
 def should_continue(state: State):
     """Determine which path to take based on route_choice"""
-    if state['route_choice'] == 'rag':
-        return "rag_processing"
-    elif state['route_choice'] == 'wiki':
-        return "wiki_processing"
-    else:
-        return "rag_processing"  # Default to RAG
+    return "rag_query" if state['route_choice'] == 'rag' else "wiki_query"
 
 # Create the graph
 workflow = StateGraph(State)
 
 # Add nodes
 workflow.add_node("router", router_node)
-workflow.add_node("rag_processing", rag_processing_node)
-workflow.add_node("wiki_processing", wiki_processing_node)
-workflow.add_node("writing", final_writing_node)
+workflow.add_node("rag_query", rag_query_node)
+workflow.add_node("wiki_query", wiki_query_node)
+workflow.add_node("generate_response", response_generation_node)
 
 # Add edges
 workflow.add_edge(START, "router")
@@ -128,19 +141,22 @@ workflow.add_conditional_edges(
     "router",
     should_continue,
     {
-        "rag_processing": "rag_processing",
-        "wiki_processing": "wiki_processing"
+        "rag_query": "rag_query",
+        "wiki_query": "wiki_query"
     }
 )
-workflow.add_edge("rag_processing", "writing")
-workflow.add_edge("wiki_processing", "writing")
-workflow.add_edge("writing", END)
+workflow.add_edge("rag_query", "generate_response")
+workflow.add_edge("wiki_query", "generate_response")
+workflow.add_edge("generate_response", END)
 
 # Compile the graph
 app = workflow.compile()
 
 def run_news_analysis(prompt: str):
-    """Run the complete news analysis workflow using tools"""
+    """
+    Run query-only news analysis workflow.
+    Note: This assumes the vector DB has been pre-populated by the extraction job.
+    """
     result = app.invoke({"prompt": prompt})
     return result['response']
 

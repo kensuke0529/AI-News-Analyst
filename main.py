@@ -15,9 +15,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.workflow.news_analysis_workflow import run_news_analysis
 
 
-
-
-
 def main():
     """Main function to run the AI News Analyst"""
     print("=== AI News Analyst ===")

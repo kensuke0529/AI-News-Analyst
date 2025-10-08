@@ -11,30 +11,41 @@ from langchain.schema import Document
 import os
 from dotenv import load_dotenv
 
+
 # Suppress SSL warnings completely
-warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
-os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+try:
+    warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
+    os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+except AttributeError:
+    pass
 
-techmeme_rss = "https://www.techmeme.com/feed.xml"
+mit_rss = "https://www.technologyreview.com/feed/"
 
-def parse_techmeme_rss():
+def parse_mit_rss():
     try:
-        response = requests.get(techmeme_rss)
+        response = requests.get(mit_rss)
         root = ET.fromstring(response.content)
         
         articles = []
         for item in root.findall('.//item'):
-            title = item.find('title').text if item.find('title') is not None else "No title"
-            link = item.find('link').text if item.find('link') is not None else "No link"
-            description = item.find('description').text if item.find('description') is not None else "No description"
-            pub_date = item.find('pubDate').text if item.find('pubDate') is not None else "No date"
+            title_elem = item.find('title')
+            title = title_elem.text if title_elem is not None and title_elem.text else "No title"
+            
+            link_elem = item.find('link')
+            link = link_elem.text if link_elem is not None and link_elem.text else "No link"
+            
+            description_elem = item.find('description')
+            description = description_elem.text if description_elem is not None and description_elem.text else "No description"
+            
+            pub_date_elem = item.find('pubDate')
+            pub_date = pub_date_elem.text if pub_date_elem is not None and pub_date_elem.text else "No date"
             
             articles.append({
                 'title': title,
                 'link': link,
                 'description': description,
                 'pub_date': pub_date,
-                'source' : 'techmeme'
+                'source': 'mit'
             })
         
         return articles
@@ -44,12 +55,18 @@ def parse_techmeme_rss():
         return []
 
 def get_text():
-    articles = parse_techmeme_rss()
+    articles = parse_mit_rss()
     for i in range(len(articles)):
-        soup = BeautifulSoup(articles[i]['description'], "html.parser")
-        text = soup.get_text()
-        articles[i]['description'] = text
+        # Only parse with BeautifulSoup if description exists and is not a placeholder
+        description = articles[i]['description']
+        if description and description != "No description":
+            soup = BeautifulSoup(description, "html.parser")
+            text = soup.get_text()
+            articles[i]['description'] = text
     return articles
+
+
+response = get_text()
 
 # ========================
 # Embedding
@@ -141,4 +158,3 @@ def Embedding_news(persist_directory="./data/vector_db"):
         vector_store.add_documents(all_docs)
 
     return vector_store
-

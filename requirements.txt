@@ -16,6 +16,9 @@ chromadb>=0.4.0
 # Environment management
 python-dotenv>=1.0.0
 
+# Scheduling
+schedule>=1.2.0
+
 # Jupyter notebook support
 jupyter>=1.0.0
 ipykernel>=6.0.0

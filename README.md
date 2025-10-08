@@ -1,15 +1,44 @@
 # AI News Analyst
 
-> **An intelligent news analysis system that automatically routes questions to either RAG-powered news search or Wikipedia knowledge base, delivering accurate answers in ~10 seconds with 96% routing accuracy and 9/10 quality scores.**
+> **An intelligent news analysis system with decoupled architecture that automatically routes questions to either RAG-powered news search or Wikipedia knowledge base, delivering accurate answers in ~5-7 seconds with 96% routing accuracy and 9/10 quality scores.**
 
 ## Quick Intro
 
 AI News Analyst is a question-answering system that intelligently combines:
-- **RAG (Retrieval-Augmented Generation)** for recent tech news from Techmeme
+- **RAG (Retrieval-Augmented Generation)** for recent tech news from multiple sources (Techmeme, MIT)
 - **Wikipedia Search** for general knowledge and historical information
 - **Smart Routing** that automatically determines the best source for your query
+- **Background Extraction** that keeps the database updated without affecting query speed
 
-Built with LangGraph, ChromaDB, and OpenAI, the system achieves **9/10 relevancy** and **9/10 correctness** while maintaining fast response times.
+Built with LangGraph, ChromaDB, and OpenAI, the system achieves **9/10 relevancy** and **9/10 correctness** with fast, predictable response times.
+
+## MVP-3 Summary (Latest)
+
+**Key Innovation:** Separated extraction from query processing for better performance and scalability.
+
+| Aspect | MVP-2 | MVP-3 | Improvement |
+|--------|-------|-------|-------------|
+| **Architecture** | Coupled | **Decoupled** |  |
+| **Query Time** | 10.55s | **~5-7s (est.)** | **-40%**  |
+| **Extraction** | Per query | **Background job** | **Isolated**  |
+| **Scalability** | Limited | **High** | **Concurrent**  |
+
+### What Changed in MVP-3
+
+**Architecture Transformation:**
+```
+BEFORE: User Query → Fetch RSS → Embed → Store → Retrieve → Response
+AFTER:  Background: Fetch RSS → Embed → Store (periodic)
+        User Query: Retrieve from DB → Response (fast!)
+```
+
+**Key Benefits:**
+- **Faster queries** - No fetching/embedding overhead during user queries
+-  **Better reliability** - RSS failures don't block user queries
+-  **Rich metadata** - Track sources, dates, and ingestion times
+-  **Scalable** - Handle multiple concurrent queries efficiently
+
+*For detailed analysis, see [documents/MVP-3.md](documents/MVP-3.md)*
 
 ##  MVP-2  Summary
 
@@ -36,39 +65,57 @@ Built with LangGraph, ChromaDB, and OpenAI, the system achieves **9/10 relevancy
  *For detailed analysis, see [documents/MVP-2.md](documents/MVP-2.md)*
 
 
-## How It Works
+## How It Works (MVP-3 Architecture)
 
+### Background Extraction (Runs Periodically)
+```mermaid
+graph LR
+    A[Scheduler] --> B[Fetch RSS]
+    B --> C[Techmeme]
+    B --> D[MIT News]
+    C --> E[Chunk & Embed]
+    D --> E
+    E --> F[ChromaDB<br/>Vector Store]
+    
+    style A fill:#F5A623,color:#fff
+    style B fill:#7ED321
+    style F fill:#4A90E2,color:#fff
+```
+
+### User Query (Real-Time)
 ```mermaid
 graph LR
     A[User Query] --> B{Smart Router<br/>GPT-4o-mini}
     
-    B -->|Recent News| C[RAG Pipeline]
+    B -->|Recent News| C[Query Vector DB]
     B -->|General Knowledge| D[Wikipedia API]
     
-    C --> E[Techmeme RSS]
-    E --> F[ChromaDB<br/>Vector Search]
-    F --> G[Response Generator<br/>GPT-4o-mini]
+    C --> E[ChromaDB<br/>Read-Only]
+    D --> F[Article Content]
     
-    D --> H[Article Content]
-    H --> G
+    E --> G[Response Generator<br/>GPT-4o-mini]
+    F --> G
     
-    G --> I[Final Answer<br/>~10s]
+    G --> H[Final Answer<br/>~5-7s]
     
     style A fill:#4A90E2,color:#fff
     style B fill:#F5A623,color:#fff
     style C fill:#7ED321
     style D fill:#BD10E0,color:#fff
     style G fill:#F8E71C
-    style I fill:#4A90E2,color:#fff
+    style H fill:#4A90E2,color:#fff
 ```
 
-**Flow:** Question → Route (RAG or Wiki) → Retrieve Context → Generate Answer
+**Background Flow:** Scheduler → Fetch → Embed → Store  
+**Query Flow:** Question → Route → Query DB → Generate Answer
 
 ## Features
 
 - **Smart Routing**: Automatically determines whether to use RAG for recent news or Wikipedia for general knowledge
-- **RAG Integration**: Retrieves and analyzes recent news from Techmeme RSS feeds
+- **Background Extraction**: Periodic job fetches and processes news independently from queries
+- **Multi-Source RAG**: Retrieves from Techmeme and MIT News with source attribution
 - **Wikipedia Search**: Accesses general knowledge and historical information
-- **Vector Database**: Uses ChromaDB for efficient document storage and retrieval
-- **LangGraph Workflow**: Orchestrates the entire analysis process
+- **Vector Database**: ChromaDB for efficient document storage and retrieval
+- **LangGraph Workflow**: Orchestrates the query processing workflow
+- **Scheduled Updates**: Configurable extraction intervals (hourly, custom, or on-demand)
 

@@ -12,25 +12,21 @@ import json
 import time
 from datetime import datetime
 from typing import Dict, List, Any
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
 
 # Add the src directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.workflow.news_analysis_workflow import app
 from test import routing_accuracy, judge_relevance, judge_correctness
-from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY not found in environment variables")
-
 # Initialize LLM judge
 llm_judge = ChatOpenAI(model='gpt-4o', api_key=openai_api_key, temperature=0)
-
 
 def run_evaluation(dataset_path: str, num_examples: int = None, verbose: bool = True) -> Dict[str, Any]:
     """
@@ -44,32 +40,21 @@ def run_evaluation(dataset_path: str, num_examples: int = None, verbose: bool = 
     Returns:
         Dictionary containing evaluation results and metrics
     """
-    # Load test dataset
+    
     with open(dataset_path, "r") as f:
         dataset_json = json.load(f)
     
-    # Handle both old and new format
-    if isinstance(dataset_json, dict) and 'test_cases' in dataset_json:
-        # New format with test_cases and metadata
-        test_dataset = dataset_json['test_cases']
-        dataset_metadata = dataset_json.get('metadata', {})
-    else:
-        # Old format - direct array
-        test_dataset = dataset_json
-        dataset_metadata = {}
-    
+    test_dataset = dataset_json['test_cases']
+    dataset_metadata = dataset_json.get('metadata', {})
+
     if num_examples is not None:
         test_dataset = test_dataset[:num_examples]
     
     total_examples = len(test_dataset)
     print(f"\n{'='*60}")
     print(f"Starting Evaluation on {total_examples} examples")
-    if dataset_metadata:
-        print(f"Dataset: {dataset_metadata.get('date_created', 'Unknown date')}")
-        print(f"RAG Questions: {dataset_metadata.get('rag_questions', 'N/A')}, Wiki Questions: {dataset_metadata.get('wiki_questions', 'N/A')}")
     print(f"{'='*60}\n")
     
-    # Initialize metrics
     metrics = {
         'correct_routing': 0,
         'total_examples': total_examples,
@@ -83,13 +68,10 @@ def run_evaluation(dataset_path: str, num_examples: int = None, verbose: bool = 
     # Run evaluation on each example
     for i, example in enumerate(test_dataset):
         if verbose:
-            print(f"\n{'='*60}")
             print(f"Example {i+1}/{total_examples} - ID: {example.get('id', f'example_{i}')}")
             print(f"{'='*60}")
             print(f"Question: {example['question']}")
             print(f"Expected Route: {example['expected_route']}")
-            print(f"Category: {example['category']} | Difficulty: {example.get('difficulty', 'N/A')}")
-            print(f"\n{'Processing...'}")
         
         try:
             # Measure workflow execution time
@@ -97,19 +79,12 @@ def run_evaluation(dataset_path: str, num_examples: int = None, verbose: bool = 
             result = app.invoke({"prompt": example['question']})
             workflow_time = time.time() - workflow_start
             
-            # Store individual example metrics
             example_metrics = {}
-            
-            # Measure evaluation time
             eval_start = time.time()
             
             # Evaluate routing accuracy
             routing_accuracy(i, result, test_dataset, example_metrics)
-            
-            # Judge relevance
             judge_relevance(i, result, test_dataset, example_metrics, llm_judge)
-            
-            # Judge correctness
             judge_correctness(i, result, test_dataset, example_metrics, llm_judge)
             
             eval_time = time.time() - eval_start
@@ -194,7 +169,6 @@ def print_summary(metrics: Dict[str, Any]):
     """Print evaluation summary."""
     print(f"\n{'='*60}")
     print("EVALUATION SUMMARY")
-    print(f"{'='*60}")
     print(f"\nTotal Examples: {metrics['total_examples']}")
     print(f"\n--- Routing Performance ---")
     print(f"Correct Routing: {metrics['correct_routing']}/{metrics['total_examples']}")
@@ -322,21 +296,16 @@ def main():
                         help='Suppress detailed progress output')
     
     args = parser.parse_args()
-    
-    # Resolve dataset path
     dataset_path = os.path.join(os.path.dirname(__file__), args.dataset)
     
-    # Run evaluation
     metrics = run_evaluation(
         dataset_path=dataset_path,
         num_examples=args.num_examples,
         verbose=not args.quiet
     )
     
-    # Print summary
     print_summary(metrics)
     
-    # Save results
     output_path = os.path.join(os.path.dirname(__file__), args.output)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     save_results(metrics, output_path)
