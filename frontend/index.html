@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI News Analyst</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #d4af37;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .tagline {
+            font-size: 0.9rem;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        /* RAG Search Section */
+        .search-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            text-align: center;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 10px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Georgia', serif;
+        }
+
+        .search-btn:hover {
+            background: #333;
+        }
+
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .rag-response {
+            background: #f8f9fa;
+            border-left: 4px solid #d4af37;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+            border-radius: 4px;
+        }
+
+        .rag-response.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* News Section */
+        .news-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #1a1a1a;
+            text-align: center;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 10px;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .news-item {
+            display: none;
+        }
+
+        .news-item.visible {
+            display: block;
+        }
+
+        .news-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-color: #d4af37;
+        }
+
+        .news-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            line-height: 1.4;
+            flex-grow: 1;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .news-source {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .news-date {
+            color: #888;
+            font-style: italic;
+        }
+
+        .news-content {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .read-more-btn {
+            background: #d4af37;
+            color: #1a1a1a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Georgia', serif;
+            margin-top: auto;
+        }
+
+        .read-more-btn:hover {
+            background: #b8941f;
+        }
+
+        .load-more-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .load-more-btn {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+        }
+
+        .load-more-btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        .load-more-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .news-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">AI News Analyst</div>
+            <div class="tagline">Intelligent News Analysis & Discovery</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- RAG Search Section -->
+        <div class="search-section">
+            <h2 class="search-title">Intelligent News Search</h2>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Ask a question about the news... (e.g., 'What are the latest developments in AI?')"
+                >
+                <button class="search-btn" id="searchBtn">Search</button>
+            </div>
+            <div class="rag-response" id="ragResponse"></div>
+        </div>
+
+        <!-- News Cards Section -->
+        <div class="news-section">
+            <h2 class="section-title">Latest News</h2>
+            <div class="news-grid" id="newsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading news articles...
+                </div>
+            </div>
+            <div class="load-more-section" id="loadMoreSection" style="display: none;">
+                <button class="load-more-btn" id="loadMoreBtn">Load More Articles</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8002';
+        
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const ragResponse = document.getElementById('ragResponse');
+        const newsGrid = document.getElementById('newsGrid');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        const loadMoreSection = document.getElementById('loadMoreSection');
+
+        // State management
+        let allNewsData = [];
+        let visibleCount = 9; // Show 3x3 = 9 articles initially
+
+        // Load all news on page load
+        document.addEventListener('DOMContentLoaded', loadAllNews);
+
+        // RAG Search functionality
+        searchBtn.addEventListener('click', performRAGSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performRAGSearch();
+            }
+        });
+
+        // Load More functionality
+        loadMoreBtn.addEventListener('click', loadMoreArticles);
+
+        async function performRAGSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            console.log('Starting RAG search with query:', query);
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            ragResponse.style.display = 'none';
+
+            try {
+                console.log('Making API call to:', `${API_BASE}/api/news/rag`);
+                const response = await fetch(`${API_BASE}/api/news/rag`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('RAG response data:', data);
+                displayRAGResponse(data.response);
+            } catch (error) {
+                console.error('RAG search error:', error);
+                displayRAGError('Failed to perform search. Please try again.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        function displayRAGResponse(response) {
+            console.log('Displaying RAG response:', response);
+            
+            // Convert markdown-like formatting to HTML
+            let formattedResponse = response
+                // Convert **bold** to <strong>
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Convert markdown links [text](url) to HTML links - MUST be before plain URL conversion
+                .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color: #d4af37; text-decoration: underline;">$1</a>')
+                // Convert plain URLs to clickable links (only if not already part of markdown or HTML)
+                .replace(/(?<!\(|href="|">)(https?:\/\/[^\s<)]+)(?![^<]*<\/a>)/g, '<a href="$1" target="_blank" style="color: #d4af37; text-decoration: underline;">$1</a>')
+                // Convert numbered lists
+                .replace(/^(\d+\.\s)/gm, '<br><strong>$1</strong>')
+                // Convert bullet points
+                .replace(/^(\*\s)/gm, '<br>• ')
+                // Convert line breaks
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>')
+                // Clean up extra breaks at the beginning
+                .replace(/^<br>+/, '');
+            
+            ragResponse.innerHTML = `
+                <h3 style="margin-bottom: 15px; color: #1a1a1a; border-bottom: 2px solid #d4af37; padding-bottom: 8px;">🔍 Search Results</h3>
+                <div style="white-space: pre-wrap; line-height: 1.8; font-size: 1rem; color: #333; background: #fafafa; padding: 20px; border-radius: 8px; border-left: 4px solid #d4af37;">${formattedResponse}</div>
+            `;
+            ragResponse.classList.add('show');
+            ragResponse.style.display = 'block';
+        }
+
+        function displayRAGError(message) {
+            console.log('Displaying RAG error:', message);
+            ragResponse.innerHTML = `
+                <h3 style="margin-bottom: 15px; color: #dc3545;">Error</h3>
+                <div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px; border-left: 4px solid #dc3545;">${message}</div>
+            `;
+            ragResponse.classList.add('show');
+            ragResponse.style.display = 'block';
+        }
+
+        async function loadAllNews() {
+            try {
+                const response = await fetch(`${API_BASE}/api/news/all`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const newsData = await response.json();
+                allNewsData = deduplicateNews(newsData);
+                displayNewsCards();
+            } catch (error) {
+                console.error('Error loading news:', error);
+                displayError('Failed to load news articles. Please check if the backend is running.');
+            }
+        }
+
+        function deduplicateNews(newsData) {
+            const seen = new Set();
+            const uniqueNews = [];
+            
+            for (const article of newsData) {
+                // Create a unique key based on title and link
+                const key = `${article.title || ''}_${article.link || ''}`;
+                
+                if (!seen.has(key) && article.title && article.title.trim() !== '') {
+                    seen.add(key);
+                    
+                    // Clean up the content - remove common prefixes and improve readability
+                    let cleanContent = article.content || '';
+                    
+                    // Remove common prefixes that don't add value
+                    cleanContent = cleanContent.replace(/^(Title:|Content:|Ashley Capoot \/ CNBC:|Colin Campbell \/ Axios:|New York Times:|TechCrunch:|The Verge:|Bloomberg:|Reuters:|Associated Press:)/i, '');
+                    
+                    // Remove author bylines at the beginning
+                    cleanContent = cleanContent.replace(/^[A-Za-z\s]+\s*\/\s*[A-Za-z\s]+:\s*/i, '');
+                    
+                    // Clean up extra whitespace
+                    cleanContent = cleanContent.trim();
+                    
+                    // If content is too short or just fragments, use a default message
+                    if (cleanContent.length < 50) {
+                        cleanContent = 'Click "Read More" to view the full article content.';
+                    }
+                    
+                    // Extract source from title or use default
+                    let source = article.source || 'Unknown';
+                    if (!source || source === 'Unknown') {
+                        // Try to extract source from title
+                        const titleMatch = article.title.match(/\(([^)]+)\)$/);
+                        if (titleMatch) {
+                            source = titleMatch[1].split('/')[0].trim();
+                        } else if (article.title.includes('CNBC')) {
+                            source = 'CNBC';
+                        } else if (article.title.includes('TechCrunch')) {
+                            source = 'TechCrunch';
+                        } else if (article.title.includes('The Verge')) {
+                            source = 'The Verge';
+                        } else if (article.title.includes('Bloomberg')) {
+                            source = 'Bloomberg';
+                        } else if (article.title.includes('Reuters')) {
+                            source = 'Reuters';
+                        } else if (article.title.includes('MIT')) {
+                            source = 'MIT Technology Review';
+                        } else {
+                            source = 'Tech News';
+                        }
+                    }
+                    
+                    uniqueNews.push({
+                        ...article,
+                        content: cleanContent,
+                        source: source
+                    });
+                }
+            }
+            
+            // Sort by publication date (newest first)
+            return uniqueNews.sort((a, b) => {
+                const dateA = new Date(a.pub_date || 0);
+                const dateB = new Date(b.pub_date || 0);
+                return dateB - dateA;
+            });
+        }
+
+        function displayNewsCards() {
+            if (!allNewsData || allNewsData.length === 0) {
+                newsGrid.innerHTML = '<div class="error">No news articles found.</div>';
+                return;
+            }
+
+            // Show only the first visibleCount articles
+            const visibleArticles = allNewsData.slice(0, visibleCount);
+            
+            newsGrid.innerHTML = allNewsData.map((article, index) => `
+                <div class="news-item ${index < visibleCount ? 'visible' : ''}">
+                    <div class="news-card">
+                        <div class="news-title">${article.title || 'Untitled'}</div>
+                        <div class="news-meta">
+                            <span class="news-source">${article.source || 'Unknown'}</span>
+                            <span class="news-date">${formatDate(article.pub_date)}</span>
+                        </div>
+                        <div class="news-content">${truncateText(article.content || '', 150)}</div>
+                        <button class="read-more-btn" onclick="openArticle('${article.link || '#'}')">
+                            Read More
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Show/hide load more button based on whether there are more articles
+            if (allNewsData.length > visibleCount) {
+                loadMoreSection.style.display = 'block';
+                loadMoreBtn.textContent = `Load More Articles (${allNewsData.length - visibleCount} remaining)`;
+            } else {
+                loadMoreSection.style.display = 'none';
+            }
+        }
+
+        function loadMoreArticles() {
+            // Increase visible count by 9 (3x3 grid)
+            visibleCount += 9;
+            displayNewsCards();
+        }
+
+        function displayError(message) {
+            newsGrid.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'No date';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch {
+                return 'Invalid date';
+            }
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        function openArticle(url) {
+            if (url && url !== '#') {
+                window.open(url, '_blank');
+            } else {
+                alert('Article link not available');
+            }
+        }
+    </script>
+</body>
+</html>

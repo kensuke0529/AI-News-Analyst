@@ -67,9 +67,10 @@ def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
     for doc in docs:
         source = doc.metadata.get('source', 'unknown')
         title = doc.metadata.get('title', '')
+        link = doc.metadata.get('link','')
         pub_date = doc.metadata.get('pub_date', '')
         formatted_docs.append(
-            f"[{source} - {pub_date}] {title}\n{doc.page_content}"
+            f"[{source} - {pub_date}] {title}\nLink: {link}\n{doc.page_content}"
         )
     
     return "\n\n".join(formatted_docs)
@@ -106,7 +107,14 @@ def response_generation_node(state: State):
     User Question: {question}
     
     Provide a detailed, well-structured response that incorporates relevant information from the context.
-    When citing information, reference the source and date when available.
+    
+    CRITICAL FORMATTING RULES FOR SOURCES:
+    1. When citing sources, use markdown hyperlink format: [Source Name](URL)
+    2. The URL should be completely hidden - users should only see the source name
+    3. Use clean source names like "Suzanne Smalley, The Record" or "The Record"
+    4. NEVER show the actual URL text anywhere in your response
+    5. Example: Write [Suzanne Smalley, The Record](http://www.techmeme.com/251008/p28#a251008p28) - users will only see "Suzanne Smalley, The Record" as clickable text
+    6. The hyperlink should be invisible to users - they only see the source name
     """)
     
     chain = (

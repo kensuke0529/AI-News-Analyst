@@ -12,6 +12,18 @@ AI News Analyst is a question-answering system that intelligently combines:
 
 Built with LangGraph, ChromaDB, and OpenAI, the system achieves **9/10 relevancy** and **9/10 correctness** with fast, predictable response times.
 
+### User Interface
+![User Interface](images/UI.png)
+*Clean, interactive interface for querying the AI News Analyst*
+
+### RAG-Powered News Search
+![RAG Search Results](images/rag.png)
+*Example of RAG-based retrieval from recent tech news sources*
+
+### Wikipedia Knowledge Base
+![Wikipedia Search Results](images/wiki.png)
+*Example of general knowledge queries routed to Wikipedia*
+
 ## MVP-3 Summary (Latest)
 
 **Key Innovation:** Separated extraction from query processing for better performance and scalability.
