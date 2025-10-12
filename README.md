@@ -130,4 +130,14 @@ graph LR
 - **Vector Database**: ChromaDB for efficient document storage and retrieval
 - **LangGraph Workflow**: Orchestrates the query processing workflow
 - **Scheduled Updates**: Configurable extraction intervals (hourly, custom, or on-demand)
+- **Global Token Limiting**: Built-in daily token limits (5000 tokens/day) for cost control
+- **Production Ready**: Docker support, health checks, and cloud deployment configs
+
+
+## 💰 Cost Control
+
+- **Daily Token Limit**: 5000 tokens (~$0.02/day)
+- **Automatic Reset**: Daily at midnight
+- **Usage Monitoring**: Real-time status via `/api/status`
+- **Cost Estimation**: ~$0.50-2.50/month depending on usage
 

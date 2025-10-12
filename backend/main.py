@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.workflow.news_analysis_workflow import run_news_analysis
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 import os
+import json
+import tiktoken
+from datetime import datetime, date
 from dotenv import load_dotenv
 
 app = FastAPI()
@@ -18,6 +21,43 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Global token tracking
+TOKEN_USAGE_FILE = "storage/daily_token_usage.json"
+DAILY_TOKEN_LIMIT = 5000  # 5000 tokens per day
+
+def load_daily_usage():
+    """Load today's token usage from file"""
+    try:
+        with open(TOKEN_USAGE_FILE, 'r') as f:
+            data = json.load(f)
+            today = date.today().isoformat()
+            return data.get(today, 0)
+    except FileNotFoundError:
+        return 0
+
+def save_daily_usage(tokens_used):
+    """Save today's token usage to file"""
+    try:
+        with open(TOKEN_USAGE_FILE, 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {}
+    
+    today = date.today().isoformat()
+    data[today] = data.get(today, 0) + tokens_used
+    
+    with open(TOKEN_USAGE_FILE, 'w') as f:
+        json.dump(data, f)
+
+def count_tokens(text: str) -> int:
+    """Count tokens in text using tiktoken"""
+    try:
+        encoding = tiktoken.encoding_for_model("gpt-4o-mini")
+        return len(encoding.encode(text))
+    except:
+        # Fallback: rough estimate (1 token ≈ 4 characters)
+        return len(text) // 4
+
 class NewsQuery(BaseModel):
     query: str
 
@@ -25,11 +65,77 @@ class NewsQuery(BaseModel):
 def root():
     return {"message": "AI News Analyst API is running"}
 
+@app.get("/api/status")
+def get_status():
+    """Get current token usage status"""
+    current_usage = load_daily_usage()
+    remaining = max(0, DAILY_TOKEN_LIMIT - current_usage)
+    
+    return {
+        "daily_limit": DAILY_TOKEN_LIMIT,
+        "used_today": current_usage,
+        "remaining_today": remaining,
+        "percentage_used": round((current_usage / DAILY_TOKEN_LIMIT) * 100, 2),
+        "status": "available" if remaining > 0 else "limit_reached"
+    }
+
 @app.post("/api/news/rag")
 def rag_news(news_query: NewsQuery):
-    prompt = news_query.query
-    result = run_news_analysis(prompt)
-    return {"response": result}
+    # Check if we've hit the daily limit
+    current_usage = load_daily_usage()
+    
+    if current_usage >= DAILY_TOKEN_LIMIT:
+        raise HTTPException(
+            status_code=429, 
+            detail={
+                "error": "Daily token limit reached",
+                "limit": DAILY_TOKEN_LIMIT,
+                "used": current_usage,
+                "message": "The site has reached its daily token limit. Please try again tomorrow."
+            }
+        )
+    
+    # Estimate tokens for this request
+    query_tokens = count_tokens(news_query.query)
+    estimated_response_tokens = 500  # Conservative estimate
+    
+    # Check if this request would exceed the limit
+    if current_usage + query_tokens + estimated_response_tokens > DAILY_TOKEN_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Request would exceed daily limit",
+                "remaining_tokens": DAILY_TOKEN_LIMIT - current_usage,
+                "estimated_tokens_needed": query_tokens + estimated_response_tokens
+            }
+        )
+    
+    try:
+        # Process the request
+        result = run_news_analysis(news_query.query)
+        
+        # Count actual tokens used
+        response_tokens = count_tokens(result)
+        total_tokens = query_tokens + response_tokens
+        
+        # Save usage
+        save_daily_usage(total_tokens)
+        
+        # Get updated status
+        new_usage = load_daily_usage()
+        remaining = max(0, DAILY_TOKEN_LIMIT - new_usage)
+        
+        return {
+            "response": result,
+            "tokens_used": total_tokens,
+            "remaining_today": remaining,
+            "status": "available" if remaining > 0 else "limit_reached"
+        }
+        
+    except Exception as e:
+        # If there's an error, still count the query tokens
+        save_daily_usage(query_tokens)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/api/news/all')
 def get_news():

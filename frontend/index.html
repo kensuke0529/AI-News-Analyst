@@ -353,6 +353,9 @@
         </div>
     </div>
 
+    <!-- Token Status Bar -->
+    <div id="tokenStatusBar"></div>
+
     <div class="container">
         <!-- RAG Search Section -->
         <div class="search-section">
@@ -400,7 +403,10 @@
         let visibleCount = 9; // Show 3x3 = 9 articles initially
 
         // Load all news on page load
-        document.addEventListener('DOMContentLoaded', loadAllNews);
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllNews();
+            checkTokenStatus();
+        });
 
         // RAG Search functionality
         searchBtn.addEventListener('click', performRAGSearch);
@@ -413,9 +419,56 @@
         // Load More functionality
         loadMoreBtn.addEventListener('click', loadMoreArticles);
 
+        // Token status functions
+        async function checkTokenStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/status`);
+                const status = await response.json();
+                
+                // Update UI with token status
+                updateTokenStatusDisplay(status);
+                
+                return status.status === 'available';
+            } catch (error) {
+                console.error('Error checking token status:', error);
+                return true; // Assume available if check fails
+            }
+        }
+
+        function updateTokenStatusDisplay(status) {
+            const statusBar = document.getElementById('tokenStatusBar');
+            if (statusBar) {
+                const percentage = status.percentage_used;
+                let color = '#28a745'; // Green
+                let statusText = 'Available';
+                
+                if (percentage >= 100) {
+                    color = '#dc3545'; // Red
+                    statusText = 'Limit Reached';
+                } else if (percentage >= 80) {
+                    color = '#ffc107'; // Yellow
+                    statusText = 'Almost Full';
+                }
+                
+                statusBar.innerHTML = `
+                    <div style="background: ${color}; color: white; padding: 8px; text-align: center; font-size: 0.9rem; font-weight: bold;">
+                        Daily Usage: ${status.used_today.toLocaleString()} / ${status.daily_limit.toLocaleString()} tokens 
+                        (${percentage}%) - ${status.remaining_today.toLocaleString()} remaining - ${statusText}
+                    </div>
+                `;
+            }
+        }
+
         async function performRAGSearch() {
             const query = searchInput.value.trim();
             if (!query) return;
+
+            // Check token status first
+            const isAvailable = await checkTokenStatus();
+            if (!isAvailable) {
+                displayRAGError('Daily token limit reached. Please try again tomorrow.');
+                return;
+            }
 
             console.log('Starting RAG search with query:', query);
             searchBtn.disabled = true;
@@ -434,12 +487,22 @@
 
                 console.log('Response status:', response.status);
                 if (!response.ok) {
+                    const errorData = await response.json();
+                    if (response.status === 429) {
+                        displayRAGError(errorData.detail.message || 'Daily token limit reached. Please try again tomorrow.');
+                        await checkTokenStatus(); // Update status display
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
                 console.log('RAG response data:', data);
                 displayRAGResponse(data.response);
+                
+                // Update token status after successful request
+                await checkTokenStatus();
+                
             } catch (error) {
                 console.error('RAG search error:', error);
                 displayRAGError('Failed to perform search. Please try again.');
