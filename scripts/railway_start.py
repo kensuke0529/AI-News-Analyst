@@ -7,6 +7,9 @@ import os
 import sys
 import logging
 
+# Add the project root to Python path so we can import backend
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Minimal logging setup
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
