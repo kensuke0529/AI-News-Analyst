@@ -4,8 +4,8 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "python scripts/run_backend.py & python scripts/serve_frontend.py & wait",
-    "healthcheckPath": "/",
+    "startCommand": "python scripts/run_backend.py",
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE"
   }

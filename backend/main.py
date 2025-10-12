@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from src.workflow.news_analysis_workflow import run_news_analysis
 from langchain_chroma import Chroma
@@ -61,9 +63,18 @@ def count_tokens(text: str) -> int:
 class NewsQuery(BaseModel):
     query: str
 
+# Mount static files for frontend
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
 @app.get("/")
 def root():
-    return {"message": "AI News Analyst API is running"}
+    """Serve the frontend HTML file"""
+    return FileResponse("frontend/index.html")
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Railway"""
+    return {"status": "healthy", "message": "AI News Analyst is running"}
 
 @app.get("/api/status")
 def get_status():
