@@ -24,13 +24,14 @@ def main():
         from backend.main import app
         
         # Railway-specific configuration
+        # Based on Railway community solution: bind to both IPv4 and IPv6
         uvicorn.run(
             "backend.main:app",
-            host="0.0.0.0",  # Must bind to all interfaces for Railway
+            host="0.0.0.0",  # Bind to all IPv4 interfaces
             port=int(port),  # Must use Railway's injected PORT
             reload=False,
-            log_level="error",  # Minimal logging for faster startup
-            access_log=False,
+            log_level="info",  # Enable logging to debug startup issues
+            access_log=True,   # Enable access logs to see healthcheck requests
             server_header=False,
             date_header=False,
             loop="asyncio",

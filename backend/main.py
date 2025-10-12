@@ -112,6 +112,7 @@ def liveness_check():
 def healthz():
     """Ultra-simple health check for Railway - no imports, no processing"""
     # Railway healthcheck endpoint - must return 200 status
+    print("Healthcheck endpoint called!")  # Debug logging
     return "OK"
 
 @app.get("/ping")
