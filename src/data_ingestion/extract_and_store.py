@@ -8,9 +8,8 @@ Run this script periodically (cron, scheduler, etc.) to keep the DB updated.
 """
 from src.data_sources.techmeme_rss_parser import get_text as get_techmeme_text
 from src.data_sources.mit import get_text as get_mit_text
-from langchain_openai import OpenAIEmbeddings
+from src.rag.database_manager import db_manager
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
 from langchain.schema import Document
 import os
 from datetime import datetime
@@ -36,11 +35,7 @@ def extract_and_store(persist_directory="./data/vector_db"):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting Extraction Job")
     print(f"{'='*60}\n")
     
-    # Initialize embedding model
-    embedding_model = OpenAIEmbeddings(
-        api_key=os.environ["OPENAI_API_KEY"], 
-        model="text-embedding-3-small"
-    )
+    # Database manager handles embedding model initialization
     
     # 1. Fetch from all sources
     print("📡 Fetching articles from sources...")
@@ -65,28 +60,10 @@ def extract_and_store(persist_directory="./data/vector_db"):
         print("⚠️  No articles fetched. Exiting.")
         return {"new_articles": 0, "new_chunks": 0, "total_articles": 0}
     
-    # 2. Load existing vector store
-    print("\n💾 Loading existing vector store...")
-    try:
-        vector_store = Chroma(
-            persist_directory=persist_directory,
-            embedding_function=embedding_model
-        )
-        
-        # Get existing article links to avoid duplicates
-        existing_links = set()
-        try:
-            all_docs = vector_store.get()
-            if all_docs and 'metadatas' in all_docs:
-                existing_links = {doc['link'] for doc in all_docs['metadatas'] if 'link' in doc}
-            print(f"  ✓ Found {len(existing_links)} existing articles in DB")
-        except:
-            existing_links = set()
-            print(f"  ✓ Empty vector store")
-    except:
-        vector_store = None
-        existing_links = set()
-        print(f"  ✓ Creating new vector store")
+    # 2. Get existing article links to avoid duplicates
+    print("\n💾 Checking existing articles...")
+    existing_links = db_manager.get_existing_links()
+    print(f"  ✓ Found {len(existing_links)} existing articles in DB")
     
     # 3. Filter new articles
     new_articles = [article for article in all_articles if article['link'] not in existing_links]
@@ -142,16 +119,18 @@ def extract_and_store(persist_directory="./data/vector_db"):
     # 5. Embed and store in vector DB
     print("\n🔮 Embedding and storing in vector DB...")
     try:
-        if vector_store is None:
-            vector_store = Chroma.from_documents(
-                documents=all_docs,
-                embedding=embedding_model,
-                persist_directory=persist_directory
-            )
-        else:
-            vector_store.add_documents(all_docs)
+        # Extract documents and metadatas for database manager
+        documents = [doc.page_content for doc in all_docs]
+        metadatas = [doc.metadata for doc in all_docs]
         
-        print(f"  ✓ Successfully stored {len(all_docs)} chunks")
+        # Use database manager to add documents
+        success = db_manager.add_documents(documents, metadatas)
+        
+        if success:
+            print(f"  ✓ Successfully stored {len(all_docs)} chunks")
+        else:
+            raise Exception("Failed to add documents to database")
+            
     except Exception as e:
         print(f"  ✗ Storage failed: {e}")
         return {

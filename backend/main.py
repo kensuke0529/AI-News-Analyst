@@ -4,8 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from src.workflow.news_analysis_workflow import run_news_analysis
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
+from src.rag.database_manager import db_manager
 import os
 import json
 import tiktoken
@@ -74,7 +73,16 @@ def root():
 @app.get("/health")
 def health_check():
     """Health check endpoint for Railway"""
-    return {"status": "healthy", "message": "AI News Analyst is running"}
+    try:
+        # Basic health check - just return success
+        return {
+            "status": "healthy", 
+            "message": "AI News Analyst is running",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        # If there's any error, return unhealthy status
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
 
 @app.get("/api/status")
 def get_status():
@@ -151,18 +159,8 @@ def rag_news(news_query: NewsQuery):
 @app.get('/api/news/all')
 def get_news():
     try:
-        embedding_model = OpenAIEmbeddings(
-            api_key=os.environ["OPENAI_API_KEY"], 
-            model="text-embedding-3-small"
-        )
-        
-        vector_store = Chroma(
-            persist_directory="./data/vector_db",
-            embedding_function=embedding_model
-        )
-        
-        # Get all documents
-        all_docs = vector_store.get(include=['documents', 'metadatas'])
+        # Get all documents using the database manager
+        all_docs = db_manager.get_all_documents()
         
         # Convert to simple format
         news_data = []

@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_chroma import Chroma
+from src.rag.database_manager import db_manager
 from src.data_sources.wikipedia_search import wiki_search
 from dotenv import load_dotenv
 
@@ -43,34 +43,20 @@ def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
     Query the pre-populated vector DB - NO extraction/fetching here.
     This assumes the DB has been populated by the background extraction job.
     """
-    embedding_model = OpenAIEmbeddings(
-        api_key=openai_api_key, 
-        model="text-embedding-3-small"
-    )
-    
-    # Load existing DB (read-only)
-    vector_store = Chroma(
-        persist_directory=persist_directory,
-        embedding_function=embedding_model
-    )
-    
-    # Retrieve relevant docs
-    retriever = vector_store.as_retriever(
-        search_type='similarity', 
-        search_kwargs={"k": 3}
-    )
-    
-    docs = retriever.invoke(prompt)
+    # Use the database manager to search for relevant documents
+    results = db_manager.search_documents(prompt, k=3)
     
     # Format with metadata for better attribution
     formatted_docs = []
-    for doc in docs:
-        source = doc.metadata.get('source', 'unknown')
-        title = doc.metadata.get('title', '')
-        link = doc.metadata.get('link','')
-        pub_date = doc.metadata.get('pub_date', '')
+    for result in results:
+        metadata = result['metadata']
+        content = result['content']
+        source = metadata.get('source', 'unknown')
+        title = metadata.get('title', '')
+        link = metadata.get('link','')
+        pub_date = metadata.get('pub_date', '')
         formatted_docs.append(
-            f"[{source} - {pub_date}] {title}\nLink: {link}\n{doc.page_content}"
+            f"[{source} - {pub_date}] {title}\nLink: {link}\n{content}"
         )
     
     return "\n\n".join(formatted_docs)

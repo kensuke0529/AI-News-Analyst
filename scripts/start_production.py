@@ -1,107 +1,105 @@
 #!/usr/bin/env python3
 """
-Production startup script for AI News Analyst
-Handles both backend and frontend services with proper process management
+Production startup script for Railway deployment
+Includes logging and environment validation
 """
-
-import subprocess
-import sys
 import os
-import signal
-import time
-from pathlib import Path
+import sys
+import logging
+from datetime import datetime
 
-def signal_handler(sig, frame):
-    """Handle shutdown signals gracefully"""
-    print("\n🛑 Shutting down AI News Analyst...")
-    sys.exit(0)
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
-def start_backend():
-    """Start the FastAPI backend"""
-    print("🚀 Starting backend server...")
-    return subprocess.Popen([
-        sys.executable, "run_backend.py"
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def validate_environment():
+    """Validate required environment variables"""
+    required_vars = ['OPENAI_API_KEY']
+    missing_vars = []
+    
+    for var in required_vars:
+        if not os.environ.get(var):
+            missing_vars.append(var)
+    
+    # Check ChromaDB Cloud configuration if enabled
+    if os.environ.get("USE_CHROMA_CLOUD", "false").lower() == "true":
+        chroma_vars = ['CHROMA_API_KEY', 'CHROMA_TENANT']
+        for var in chroma_vars:
+            if not os.environ.get(var):
+                missing_vars.append(var)
+    
+    if missing_vars:
+        logger.error(f"Missing required environment variables: {missing_vars}")
+        return False
+    
+    logger.info("Environment validation passed")
+    return True
 
-def start_frontend():
-    """Start the frontend server"""
-    print("🌐 Starting frontend server...")
-    return subprocess.Popen([
-        sys.executable, "serve_frontend.py"
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def populate_database_if_needed():
+    """Populate database with initial data if needed"""
+    try:
+        from src.rag.database_manager import db_manager
+        
+        # Check if database has any data
+        existing_links = db_manager.get_existing_links()
+        
+        if len(existing_links) == 0:
+            logger.info("Database is empty, populating with initial data...")
+            from src.data_ingestion.extract_and_store import extract_and_store
+            
+            result = extract_and_store()
+            if result['status'] == 'success':
+                logger.info(f"✅ Database populated with {result['new_articles']} articles")
+            else:
+                logger.warning(f"⚠️  Database population had issues: {result.get('error', 'Unknown error')}")
+        else:
+            logger.info(f"✅ Database already has {len(existing_links)} articles")
+            
+    except Exception as e:
+        logger.warning(f"⚠️  Could not check/populate database: {e}")
+        logger.warning("App will start but may not have data available")
 
 def main():
     """Main startup function"""
-    print("=" * 60)
-    print("🤖 AI News Analyst - Production Startup")
-    print("=" * 60)
+    logger.info("Starting AI News Analyst in production mode")
+    logger.info(f"Startup time: {datetime.now().isoformat()}")
     
-    # Set up signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Log environment info
+    port = os.environ.get("PORT", "8002")
+    logger.info(f"Port: {port}")
+    logger.info(f"Python version: {sys.version}")
     
-    # Check if we're in the right directory
-    if not Path("backend/main.py").exists():
-        print("❌ Error: Please run this script from the project root directory")
+    # Validate environment
+    if not validate_environment():
+        logger.error("Environment validation failed")
         sys.exit(1)
     
-    # Check environment variables
-    if not os.getenv("OPENAI_API_KEY"):
-        print("❌ Error: OPENAI_API_KEY environment variable is required")
-        print("   Please set it in your .env file or environment")
-        sys.exit(1)
+    # Populate database if needed
+    populate_database_if_needed()
     
-    print("✅ Environment check passed")
-    
-    # Start services
-    backend_process = None
-    frontend_process = None
-    
+    # Import and run the backend
     try:
-        # Start backend
-        backend_process = subprocess.Popen([
-            sys.executable, "scripts/run_backend.py"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(2)  # Give backend time to start
+        import uvicorn
+        from backend.main import app
         
-        # Start frontend
-        frontend_process = subprocess.Popen([
-            sys.executable, "scripts/serve_frontend.py"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(2)  # Give frontend time to start
-        
-        print("\n🎉 AI News Analyst is running!")
-        print("📱 Frontend: http://localhost:3000")
-        print("🔧 Backend API: http://localhost:8002")
-        print("📊 API Status: http://localhost:8002/api/status")
-        print("\n💡 Token Limit: 5000 tokens per day")
-        print("🔄 Press Ctrl+C to stop")
-        print("=" * 60)
-        
-        # Keep the main process alive
-        while True:
-            time.sleep(1)
-            
-            # Check if processes are still running
-            if backend_process.poll() is not None:
-                print("❌ Backend process died unexpectedly")
-                break
-            if frontend_process.poll() is not None:
-                print("❌ Frontend process died unexpectedly")
-                break
-                
-    except KeyboardInterrupt:
-        print("\n🛑 Received shutdown signal...")
+        logger.info("Starting FastAPI server...")
+        uvicorn.run(
+            "backend.main:app",
+            host="0.0.0.0",
+            port=int(port),
+            reload=False,
+            log_level="info",
+            access_log=True
+        )
     except Exception as e:
-        print(f"❌ Error: {e}")
-    finally:
-        # Clean up processes
-        if backend_process:
-            backend_process.terminate()
-        if frontend_process:
-            frontend_process.terminate()
-        
-        print("✅ Shutdown complete")
+        logger.error(f"Failed to start server: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

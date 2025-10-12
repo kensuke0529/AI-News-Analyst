@@ -28,12 +28,12 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Expose port (Railway will use this)
-EXPOSE 8002
+# Expose port (Railway will set PORT environment variable)
+EXPOSE $PORT
 
-# Health check
+# Health check (use PORT environment variable)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8002}/health || exit 1
 
 # Start the backend service (which now serves both API and frontend)
-CMD ["python", "scripts/run_backend.py"]
+CMD ["python", "scripts/start_production.py"]

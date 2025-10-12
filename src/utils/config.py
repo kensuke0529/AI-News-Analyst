@@ -17,7 +17,11 @@ OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0"))
 TECHMEME_RSS_URL = "https://www.techmeme.com/feed.xml"
 
 # Vector Database
-VECTOR_DB_PATH = "./data/vector_db"
+VECTOR_DB_PATH = "./data/vector_db"  # Fallback for local development
+CHROMA_API_KEY = os.getenv("CHROMA_API_KEY")
+CHROMA_TENANT = os.getenv("CHROMA_TENANT")
+CHROMA_DATABASE = os.getenv("CHROMA_DATABASE", "news-ai")
+USE_CHROMA_CLOUD = os.getenv("USE_CHROMA_CLOUD", "false").lower() == "true"
 
 # RAG Settings
 CHUNK_SIZE = 100
