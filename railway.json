@@ -4,9 +4,9 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "python scripts/quick_start.py",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 60,
+    "startCommand": "python scripts/railway_start.py",
+    "healthcheckPath": "/healthz",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"
   }
 }

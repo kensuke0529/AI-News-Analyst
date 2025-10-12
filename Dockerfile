@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python scripts/health_check.py
 
 # Start the backend service (which now serves both API and frontend)
-CMD ["python", "scripts/quick_start.py"]
+CMD ["python", "scripts/railway_start.py"]

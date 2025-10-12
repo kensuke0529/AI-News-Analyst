@@ -34,7 +34,7 @@ def get_db_manager():
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],  # Allows all origins including healthcheck.railway.app
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -110,8 +110,14 @@ def liveness_check():
 
 @app.get("/healthz")
 def healthz():
-    """Ultra-simple health check for Railway"""
+    """Ultra-simple health check for Railway - no imports, no processing"""
+    # Railway healthcheck endpoint - must return 200 status
     return "OK"
+
+@app.get("/ping")
+def ping():
+    """Even simpler ping endpoint"""
+    return "pong"
 
 @app.get("/api/status")
 def get_status():
