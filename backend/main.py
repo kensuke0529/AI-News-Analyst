@@ -108,6 +108,11 @@ def liveness_check():
     """Kubernetes-style liveness probe - even faster"""
     return {"status": "alive"}
 
+@app.get("/healthz")
+def healthz():
+    """Ultra-simple health check for Railway"""
+    return "OK"
+
 @app.get("/api/status")
 def get_status():
     """Get current token usage status"""

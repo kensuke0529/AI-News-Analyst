@@ -5,8 +5,8 @@
   },
   "deploy": {
     "startCommand": "python scripts/quick_start.py",
-    "healthcheckPath": "/health/live",
-    "healthcheckTimeout": 30,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE"
   }
 }
