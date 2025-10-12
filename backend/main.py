@@ -92,7 +92,7 @@ def root():
 def health_check():
     """Health check endpoint for Railway - simple and fast"""
     try:
-        # Basic health check - just return success
+        # Ultra-fast health check - minimal processing
         return {
             "status": "healthy", 
             "message": "AI News Analyst is running",
@@ -102,6 +102,11 @@ def health_check():
     except Exception as e:
         # If there's any error, return unhealthy status
         raise HTTPException(status_code=503, detail="Service unhealthy")
+
+@app.get("/health/live")
+def liveness_check():
+    """Kubernetes-style liveness probe - even faster"""
+    return {"status": "alive"}
 
 @app.get("/api/status")
 def get_status():

@@ -1,31 +1,40 @@
 #!/usr/bin/env python3
 """
 Simple health check script for Railway deployment
-Alternative to curl for health checks
+Uses built-in urllib instead of requests to avoid dependency issues
 """
 import sys
 import os
-import requests
+import urllib.request
+import urllib.error
 import time
+import json
 
 def health_check():
     """Perform health check on the application"""
     port = os.environ.get("PORT", "8002")
-    url = f"http://localhost:{port}/health"
+    url = f"http://localhost:{port}/health/live"
     
     try:
-        # Add timeout to prevent hanging
-        response = requests.get(url, timeout=10)
+        # Create request with timeout
+        req = urllib.request.Request(url)
+        req.add_header('User-Agent', 'Railway-HealthCheck/1.0')
         
-        if response.status_code == 200:
-            print("Health check passed")
-            return 0
-        else:
-            print(f"Health check failed with status code: {response.status_code}")
-            return 1
-            
-    except requests.exceptions.RequestException as e:
-        print(f"Health check failed: {e}")
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                # Try to parse JSON response
+                try:
+                    data = json.loads(response.read().decode('utf-8'))
+                    print(f"Health check passed: {data.get('status', 'unknown')}")
+                except:
+                    print("Health check passed (non-JSON response)")
+                return 0
+            else:
+                print(f"Health check failed with status code: {response.status}")
+                return 1
+                
+    except urllib.error.URLError as e:
+        print(f"Health check failed - URL error: {e}")
         return 1
     except Exception as e:
         print(f"Unexpected error during health check: {e}")
@@ -33,5 +42,5 @@ def health_check():
 
 if __name__ == "__main__":
     # Give the server a moment to start
-    time.sleep(5)
+    time.sleep(2)
     sys.exit(health_check())

@@ -93,15 +93,18 @@ def main():
         logger.info(f"Server will be available at http://0.0.0.0:{port}")
         logger.info(f"Health check endpoint: http://0.0.0.0:{port}/health")
         
+        # Start server with optimized settings for Railway
         uvicorn.run(
             "backend.main:app",
             host="0.0.0.0",
             port=int(port),
             reload=False,
             log_level="info",
-            access_log=True,
+            access_log=False,  # Disable access logs for better performance
             server_header=False,
-            date_header=False
+            date_header=False,
+            loop="asyncio",  # Use asyncio loop for better performance
+            workers=1  # Single worker for Railway
         )
     except ImportError as e:
         logger.error(f"Import error - missing dependencies: {e}")

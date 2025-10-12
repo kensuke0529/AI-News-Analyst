@@ -32,8 +32,8 @@ USER app
 EXPOSE $PORT
 
 # Health check using Python script (more reliable than curl)
-HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python scripts/health_check.py
 
 # Start the backend service (which now serves both API and frontend)
-CMD ["python", "scripts/start_production.py"]
+CMD ["python", "scripts/quick_start.py"]
