@@ -31,9 +31,9 @@ USER app
 # Expose port (Railway will set PORT environment variable)
 EXPOSE $PORT
 
-# Health check (use PORT environment variable)
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8002}/health || exit 1
+# Health check using Python script (more reliable than curl)
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD python scripts/health_check.py
 
 # Start the backend service (which now serves both API and frontend)
 CMD ["python", "scripts/start_production.py"]

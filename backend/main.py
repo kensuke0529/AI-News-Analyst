@@ -3,15 +3,33 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from src.workflow.news_analysis_workflow import run_news_analysis
-from src.rag.database_manager import db_manager
 import os
 import json
 import tiktoken
 from datetime import datetime, date
 from dotenv import load_dotenv
 
-app = FastAPI()
+# Load environment variables
+load_dotenv()
+
+app = FastAPI(title="AI News Analyst", version="1.0.0")
+
+# Lazy imports to avoid startup issues
+def get_workflow():
+    try:
+        from src.workflow.news_analysis_workflow import run_news_analysis
+        return run_news_analysis
+    except ImportError as e:
+        print(f"Warning: Could not import workflow: {e}")
+        return None
+
+def get_db_manager():
+    try:
+        from src.rag.database_manager import db_manager
+        return db_manager
+    except ImportError as e:
+        print(f"Warning: Could not import database manager: {e}")
+        return None
 
 # Add CORS middleware
 app.add_middleware(
@@ -73,11 +91,17 @@ def root():
 @app.get("/health")
 def health_check():
     """Health check endpoint for Railway - simple and fast"""
-    return {
-        "status": "healthy", 
-        "message": "AI News Analyst is running",
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        # Basic health check - just return success
+        return {
+            "status": "healthy", 
+            "message": "AI News Analyst is running",
+            "timestamp": datetime.now().isoformat(),
+            "version": "1.0.0"
+        }
+    except Exception as e:
+        # If there's any error, return unhealthy status
+        raise HTTPException(status_code=503, detail="Service unhealthy")
 
 @app.get("/api/status")
 def get_status():
@@ -95,6 +119,14 @@ def get_status():
 
 @app.post("/api/news/rag")
 def rag_news(news_query: NewsQuery):
+    # Get workflow function
+    run_news_analysis = get_workflow()
+    if run_news_analysis is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="News analysis service is not available. Please try again later."
+        )
+    
     # Check if we've hit the daily limit
     current_usage = load_daily_usage()
     
@@ -154,6 +186,11 @@ def rag_news(news_query: NewsQuery):
 @app.get('/api/news/all')
 def get_news():
     try:
+        # Get database manager
+        db_manager = get_db_manager()
+        if db_manager is None:
+            return {"error": "Database service is not available"}
+        
         # Get all documents using the database manager
         all_docs = db_manager.get_all_documents()
         

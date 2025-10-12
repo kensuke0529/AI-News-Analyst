@@ -90,16 +90,28 @@ def main():
         from backend.main import app
         
         logger.info("Starting FastAPI server...")
+        logger.info(f"Server will be available at http://0.0.0.0:{port}")
+        logger.info(f"Health check endpoint: http://0.0.0.0:{port}/health")
+        
         uvicorn.run(
             "backend.main:app",
             host="0.0.0.0",
             port=int(port),
             reload=False,
             log_level="info",
-            access_log=True
+            access_log=True,
+            server_header=False,
+            date_header=False
         )
+    except ImportError as e:
+        logger.error(f"Import error - missing dependencies: {e}")
+        logger.error("Make sure all required packages are installed")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == "__main__":
