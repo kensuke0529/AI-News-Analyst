@@ -72,17 +72,12 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint for Railway"""
-    try:
-        # Basic health check - just return success
-        return {
-            "status": "healthy", 
-            "message": "AI News Analyst is running",
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        # If there's any error, return unhealthy status
-        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+    """Health check endpoint for Railway - simple and fast"""
+    return {
+        "status": "healthy", 
+        "message": "AI News Analyst is running",
+        "timestamp": datetime.now().isoformat()
+    }
 
 @app.get("/api/status")
 def get_status():

@@ -80,8 +80,9 @@ def main():
         logger.error("Environment validation failed")
         sys.exit(1)
     
-    # Populate database if needed
-    populate_database_if_needed()
+    # Skip database population on startup to avoid health check timeout
+    # Database will be populated on first API call
+    logger.info("Skipping database population on startup for faster health checks")
     
     # Import and run the backend
     try:
