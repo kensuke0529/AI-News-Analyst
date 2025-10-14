@@ -50,7 +50,7 @@ AFTER:  Background: Fetch RSS → Embed → Store (periodic)
 -  **Rich metadata** - Track sources, dates, and ingestion times
 -  **Scalable** - Handle multiple concurrent queries efficiently
 
-*For detailed analysis, see [documents/MVP-3.md](documents/MVP-3.md)*
+*For detailed analysis, see [docs/MVP-3.md](documents/MVP-3.md)*
 
 ##  MVP-2  Summary
 
@@ -74,7 +74,7 @@ AFTER:  Background: Fetch RSS → Embed → Store (periodic)
   - Structured ground truth with difficulty ratings
   - More edge cases and real-world scenarios
 
- *For detailed analysis, see [documents/MVP-2.md](documents/MVP-2.md)*
+ *For detailed analysis, see [docs/MVP-2.md](documents/MVP-2.md)*
 
 
 ## How It Works (MVP-3 Architecture)
@@ -132,12 +132,4 @@ graph LR
 - **Scheduled Updates**: Configurable extraction intervals (hourly, custom, or on-demand)
 - **Global Token Limiting**: Built-in daily token limits (5000 tokens/day) for cost control
 - **Production Ready**: Docker support, health checks, and cloud deployment configs
-
-
-## 💰 Cost Control
-
-- **Daily Token Limit**: 5000 tokens (~$0.02/day)
-- **Automatic Reset**: Daily at midnight
-- **Usage Monitoring**: Real-time status via `/api/status`
-- **Cost Estimation**: ~$0.50-2.50/month depending on usage
 

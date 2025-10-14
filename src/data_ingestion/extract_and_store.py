@@ -18,8 +18,12 @@ import warnings
 import urllib3
 
 # Suppress SSL warnings
-warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
-os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+try:
+    warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
+    os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+except AttributeError:
+    # urllib3 version doesn't have NotOpenSSLWarning
+    pass
 
 load_dotenv()
 

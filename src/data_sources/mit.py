@@ -17,6 +17,7 @@ try:
     warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
     os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
 except AttributeError:
+    # urllib3 version doesn't have NotOpenSSLWarning
     pass
 
 mit_rss = "https://www.technologyreview.com/feed/"

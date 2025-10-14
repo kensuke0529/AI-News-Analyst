@@ -12,8 +12,12 @@ import os
 from dotenv import load_dotenv
 
 # Suppress SSL warnings completely
-warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
-os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+try:
+    warnings.filterwarnings('ignore', category=urllib3.exceptions.NotOpenSSLWarning)
+    os.environ['PYTHONWARNINGS'] = 'ignore::urllib3.exceptions.NotOpenSSLWarning'
+except AttributeError:
+    # urllib3 version doesn't have NotOpenSSLWarning
+    pass
 
 techmeme_rss = "https://www.techmeme.com/feed.xml"
 

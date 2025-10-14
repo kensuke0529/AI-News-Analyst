@@ -56,3 +56,5 @@ data/evaluation/*
 # Logs
 *.log
 
+scripts/
+storage/
