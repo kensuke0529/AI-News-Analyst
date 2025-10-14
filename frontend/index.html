@@ -29,13 +29,17 @@
             padding: 20px;
         }
 
-        /* Header */
+        /* Header - Apple Inspired */
         .header {
-            background: #1a1a1a;
-            color: white;
+            background: #ffffff;
+            color: #212529;
             padding: 20px 0;
             margin-bottom: 30px;
-            border-bottom: 3px solid #d4af37;
+            border-bottom: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
         }
 
         .header-content {
@@ -48,19 +52,24 @@
         }
 
         .logo {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #d4af37;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .logo:hover {
+            color: #b026ff;
         }
 
         .tagline {
             font-size: 0.9rem;
-            color: #ccc;
+            color: #495057;
             font-style: italic;
         }
 
         .nav-btn {
-            color: white;
+            color: #495057;
             text-decoration: none;
             font-weight: 500;
             font-size: 0.9375rem;
@@ -69,7 +78,7 @@
         }
 
         .nav-btn:hover {
-            color: #d4af37;
+            color: #007bff;
         }
 
         .nav-btn::after {
@@ -79,7 +88,7 @@
             height: 2px;
             bottom: -4px;
             left: 0;
-            background-color: #d4af37;
+            background-color: #007bff;
             transition: width 0.3s ease;
         }
 
@@ -219,19 +228,22 @@
 
         .search-btn {
             padding: 15px 30px;
-            background: #1a1a1a;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            background: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-family: 'Georgia', serif;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
 
         .search-btn:hover {
-            background: #333;
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 123, 255, 0.25);
         }
 
         .search-btn:disabled {
@@ -355,21 +367,23 @@
         }
 
         .read-more-btn {
-            background: #d4af37;
-            color: #1a1a1a;
-            border: none;
+            background: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 0.85rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-family: 'Georgia', serif;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
             margin-top: auto;
         }
 
         .read-more-btn:hover {
-            background: #b8941f;
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
         }
 
         .load-more-section {
@@ -379,21 +393,23 @@
         }
 
         .load-more-btn {
-            background: #1a1a1a;
-            color: white;
-            border: none;
+            background: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
             padding: 15px 40px;
             border-radius: 8px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Georgia', serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .load-more-btn:hover {
-            background: #333;
+            background: #007bff;
+            color: white;
             transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 123, 255, 0.25);
         }
 
         .load-more-btn:disabled {
@@ -435,11 +451,12 @@
 
         /* Footer Section */
         .footer-section {
-            background: #1a1a1a;
-            color: white;
+            background: #ffffff;
+            color: #212529;
             padding: 60px 20px;
             text-align: center;
             margin-top: 60px;
+            border-top: 1px solid #dee2e6;
         }
 
         .footer-content {
@@ -451,12 +468,12 @@
             font-size: 1.75rem;
             font-weight: 600;
             margin-bottom: 15px;
-            color: #d4af37;
+            color: #212529;
         }
 
         .footer-subtitle {
             font-size: 1.125rem;
-            color: #ccc;
+            color: #495057;
             margin-bottom: 35px;
         }
 
@@ -470,18 +487,21 @@
         .footer-link {
             display: inline-block;
             padding: 14px 28px;
-            background: #d4af37;
-            color: #1a1a1a;
+            background: transparent;
+            color: #007bff;
             text-decoration: none;
-            border-radius: 980px;
+            border-radius: 8px;
+            border: 2px solid #007bff;
             font-weight: 600;
             font-size: 1rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .footer-link:hover {
-            background: #e5c158;
-            transform: scale(1.05);
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 123, 255, 0.25);
         }
 
         /* Responsive Design */
@@ -538,10 +558,12 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="logo">AI News Analyst</div>
-            <div style="display: flex; gap: 12px;">
-                <a href="about.html" class="nav-btn">About Me</a>
+            <a href="index.html" class="logo">AI News Analyst</a>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="about.html" class="nav-btn">About</a>
                 <a href="how-it-works.html" class="nav-btn">How It Works</a>
+                <a href="https://kensuke-myweb-website-20250916-u9c3a.s3.us-east-1.amazonaws.com/index.html" class="nav-btn" target="_blank">Portfolio</a>
+                <a href="../blog-aws/index.html" class="nav-btn">Blog</a>
             </div>
         </div>
     </div>
