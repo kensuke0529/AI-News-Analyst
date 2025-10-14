@@ -433,6 +433,57 @@
             border-left: 4px solid #dc3545;
         }
 
+        /* Footer Section */
+        .footer-section {
+            background: #1a1a1a;
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #d4af37;
+        }
+
+        .footer-subtitle {
+            font-size: 1.125rem;
+            color: #ccc;
+            margin-bottom: 35px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            display: inline-block;
+            padding: 14px 28px;
+            background: #d4af37;
+            color: #1a1a1a;
+            text-decoration: none;
+            border-radius: 980px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .footer-link:hover {
+            background: #e5c158;
+            transform: scale(1.05);
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
             .news-grid {
@@ -489,8 +540,8 @@
         <div class="header-content">
             <div class="logo">AI News Analyst</div>
             <div style="display: flex; gap: 12px;">
-                <a href="/about" class="nav-btn">About Me</a>
-                <a href="/how-it-works" class="nav-btn">How It Works</a>
+                <a href="about.html" class="nav-btn">About Me</a>
+                <a href="how-it-works.html" class="nav-btn">How It Works</a>
             </div>
         </div>
     </div>
@@ -576,6 +627,20 @@
             </div>
             <div class="load-more-section" id="loadMoreSection" style="display: none;">
                 <button class="load-more-btn" id="loadMoreBtn">Load More Articles</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer-section">
+        <div class="footer-content">
+            <h2 class="footer-title">Connect With Me</h2>
+            <p class="footer-subtitle">Interested in AI/ML projects? Let's connect!</p>
+            <div class="footer-links">
+                <a href="https://www.linkedin.com/in/umakoshi-kensuke/" class="footer-link" target="_blank">LinkedIn</a>
+                <a href="https://github.com/kensuke0529" class="footer-link" target="_blank">GitHub</a>
+                <a href="mailto:kenkou1001@gmail.com" class="footer-link">Email</a>
+                <a href="https://kensuke-myweb-website-20250916-u9c3a.s3.us-east-1.amazonaws.com/index.html" class="footer-link" target="_blank">Portfolio</a>
             </div>
         </div>
     </div>
