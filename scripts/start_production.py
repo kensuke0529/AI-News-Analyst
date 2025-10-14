@@ -55,14 +55,14 @@ def populate_database_if_needed():
             
             result = extract_and_store()
             if result['status'] == 'success':
-                logger.info(f"✅ Database populated with {result['new_articles']} articles")
+                logger.info(f"[OK] Database populated with {result['new_articles']} articles")
             else:
-                logger.warning(f"⚠️  Database population had issues: {result.get('error', 'Unknown error')}")
+                logger.warning(f"[WARNING] Database population had issues: {result.get('error', 'Unknown error')}")
         else:
-            logger.info(f"✅ Database already has {len(existing_links)} articles")
+            logger.info(f"[OK] Database already has {len(existing_links)} articles")
             
     except Exception as e:
-        logger.warning(f"⚠️  Could not check/populate database: {e}")
+        logger.warning(f"[WARNING] Could not check/populate database: {e}")
         logger.warning("App will start but may not have data available")
 
 def main():

@@ -34,19 +34,19 @@ def main():
         result = extract_and_store()
         
         if result['status'] == 'success':
-            logger.info("✅ Database population completed successfully!")
+            logger.info("Database population completed successfully!")
             logger.info(f"   New articles: {result['new_articles']}")
             logger.info(f"   New chunks: {result['new_chunks']}")
             logger.info(f"   Total articles: {result['total_articles']}")
         elif result['status'] == 'up_to_date':
-            logger.info("✅ Database is already up to date!")
+            logger.info("Database is already up to date!")
             logger.info(f"   Total articles: {result['total_articles']}")
         else:
-            logger.error(f"❌ Database population failed: {result.get('error', 'Unknown error')}")
+            logger.error(f"Database population failed: {result.get('error', 'Unknown error')}")
             sys.exit(1)
             
     except Exception as e:
-        logger.error(f"❌ Database population failed with exception: {e}")
+        logger.error(f"Database population failed with exception: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

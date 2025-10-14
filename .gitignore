@@ -56,5 +56,8 @@ data/evaluation/*
 # Logs
 *.log
 
-scripts/
-storage/
+# Storage (runtime data only)
+storage/cache/*
+storage/logs/*
+storage/databases/*
+storage/daily_token_usage.json
