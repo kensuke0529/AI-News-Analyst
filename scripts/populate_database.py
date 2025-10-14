@@ -3,6 +3,8 @@
 Script to populate the database with initial data for Railway deployment
 This ensures the app has some data to work with on first startup
 """
+
+
 import os
 import sys
 import logging

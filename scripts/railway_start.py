@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def main():
     """Railway-optimized startup with proper PORT handling"""
     # Railway injects PORT environment variable - this is critical for healthchecks
-    port = os.environ.get("PORT", "8000")  # Default to 8000 if not set
+    port = os.environ.get("PORT", "8000")  
     
     logger.info(f"Starting on Railway port: {port}")
     logger.info("PORT variable is required for Railway healthchecks to work")
@@ -30,11 +30,11 @@ def main():
         # Based on Railway community solution: bind to both IPv4 and IPv6
         uvicorn.run(
             "backend.main:app",
-            host="0.0.0.0",  # Bind to all IPv4 interfaces
-            port=int(port),  # Must use Railway's injected PORT
+            host="0.0.0.0",  
+            port=int(port),  
             reload=False,
-            log_level="info",  # Enable logging to debug startup issues
-            access_log=True,   # Enable access logs to see healthcheck requests
+            log_level="info", 
+            access_log=True,   
             server_header=False,
             date_header=False,
             loop="asyncio",

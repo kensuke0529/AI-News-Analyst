@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Simple health check script for Railway deployment
-Uses built-in urllib instead of requests to avoid dependency issues
-"""
 import sys
 import os
 import urllib.request
@@ -16,7 +12,6 @@ def health_check():
     url = f"http://localhost:{port}/health/live"
     
     try:
-        # Create request with timeout
         req = urllib.request.Request(url)
         req.add_header('User-Agent', 'Railway-HealthCheck/1.0')
         

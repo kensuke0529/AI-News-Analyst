@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """
-Populate News Database Script
-============================
+
 
 This script fetches news articles from various sources and populates the vector database.
 Run this script to update the news database with fresh articles.
 
-Usage:
-    python scripts/populate_news.py
 """
 
 import sys

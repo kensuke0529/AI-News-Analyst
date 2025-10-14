@@ -9,12 +9,10 @@ import tiktoken
 from datetime import datetime, date
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 app = FastAPI(title="AI News Analyst", version="1.0.0")
 
-# Lazy imports to avoid startup issues
 def get_workflow():
     try:
         from src.workflow.news_analysis_workflow import run_news_analysis
@@ -88,6 +86,16 @@ def root():
     """Serve the frontend HTML file"""
     return FileResponse("frontend/index.html")
 
+@app.get("/how-it-works")
+def how_it_works():
+    """Serve the how-it-works page"""
+    return FileResponse("frontend/how-it-works.html")
+
+@app.get("/about")
+def about():
+    """Serve the about page"""
+    return FileResponse("frontend/about.html")
+
 @app.get("/health")
 def health_check():
     """Health check endpoint for Railway - simple and fast"""
@@ -106,13 +114,10 @@ def health_check():
 @app.get("/health/live")
 def liveness_check():
     """Kubernetes-style liveness probe - even faster"""
-    return {"status": "alive"}
+    return {"status": "fine"}
 
 @app.get("/healthz")
 def healthz():
-    """Ultra-simple health check for Railway - no imports, no processing"""
-    # Railway healthcheck endpoint - must return 200 status
-    print("Healthcheck endpoint called!")  # Debug logging
     return "OK"
 
 @app.get("/ping")
@@ -136,7 +141,6 @@ def get_status():
 
 @app.post("/api/news/rag")
 def rag_news(news_query: NewsQuery):
-    # Get workflow function
     run_news_analysis = get_workflow()
     if run_news_analysis is None:
         raise HTTPException(
@@ -196,7 +200,6 @@ def rag_news(news_query: NewsQuery):
         }
         
     except Exception as e:
-        # If there's an error, still count the query tokens
         save_daily_usage(query_tokens)
         raise HTTPException(status_code=500, detail=str(e))
 
