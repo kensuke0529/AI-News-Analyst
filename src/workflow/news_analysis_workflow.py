@@ -20,23 +20,34 @@ class State(TypedDict):
 def route_decision(prompt: str) -> str:
     """
     Function to determine whether to use RAG or Wikipedia based on the user prompt.
-    Returns 'rag' for recent news/current events, 'wiki' for general knowledge.
+    For a news analysis site, we should prioritize RAG for most queries.
     """
-    llm = ChatOpenAI(model='gpt-4o-mini', api_key=openai_api_key, temperature=0)
+    # For a news analysis site, we should almost always use RAG
+    # Only use Wikipedia for very specific general knowledge questions
     
-    routing_prompt = f"""
-    Analyze this user prompt and determine the best approach:
+    # Check if the prompt is asking for very general knowledge that's not news-related
+    general_knowledge_keywords = [
+        "what is", "define", "explain the concept", "how does work", 
+        "definition of", "meaning of", "explain", "describe"
+    ]
     
-    Prompt: {prompt}
+    # If it's a very general knowledge question, use Wikipedia
+    if any(keyword in prompt.lower() for keyword in general_knowledge_keywords):
+        # But still check if it's news-related
+        news_keywords = [
+            "news", "recent", "latest", "current", "today", "yesterday", 
+            "this week", "this month", "breaking", "update", "announcement"
+        ]
+        
+        # If it contains news keywords, use RAG
+        if any(keyword in prompt.lower() for keyword in news_keywords):
+            return "rag"
+        
+        # Otherwise, use Wikipedia for general knowledge
+        return "wiki"
     
-    Return "rag" if this is about recent news, current events, or requires up-to-date information.
-    Return "wiki" if this is about general knowledge, historical facts, or established concepts.
-    
-    Only return "rag" or "wiki" - nothing else.
-    """
-    
-    response = llm.invoke(routing_prompt)
-    return response.content.strip().lower()
+    # For all other queries, use RAG (news analysis site)
+    return "rag"
 
 def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
     """
@@ -55,11 +66,13 @@ def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
         title = metadata.get('title', '')
         link = metadata.get('link','')
         pub_date = metadata.get('pub_date', '')
+        
+        # Format with clear source attribution
         formatted_docs.append(
-            f"[{source} - {pub_date}] {title}\nLink: {link}\n{content}"
+            f"SOURCE: {source}\nTITLE: {title}\nDATE: {pub_date}\nLINK: {link}\nCONTENT: {content}"
         )
     
-    return "\n\n".join(formatted_docs)
+    return "\n\n---\n\n".join(formatted_docs)
 
 def wiki_node(prompt: str) -> str:
     """Function for Wikipedia search"""
@@ -92,15 +105,21 @@ def response_generation_node(state: State):
     
     User Question: {question}
     
-    Provide a detailed, well-structured response that incorporates relevant information from the context.
+    CRITICAL RULES:
+    1. ONLY use information from the provided context above
+    2. DO NOT make up or hallucinate any information not in the context
+    3. DO NOT cite sources that are not explicitly mentioned in the context
+    4. If the context doesn't contain enough information to answer the question, say so clearly
     
-    CRITICAL FORMATTING RULES FOR SOURCES:
-    1. When citing sources, use markdown hyperlink format: [Source Name](URL)
-    2. The URL should be completely hidden - users should only see the source name
-    3. Use clean source names like "Suzanne Smalley, The Record" or "The Record"
-    4. NEVER show the actual URL text anywhere in your response
-    5. Example: Write [Suzanne Smalley, The Record](http://www.techmeme.com/251008/p28#a251008p28) - users will only see "Suzanne Smalley, The Record" as clickable text
-    6. The hyperlink should be invisible to users - they only see the source name
+    SOURCE CITATION RULES:
+    1. ONLY cite sources that are explicitly mentioned in the context above
+    2. Use the exact source names and links provided in the context
+    3. If no sources are provided in the context, do NOT add any citations
+    4. NEVER make up source names like "The Record" or "Suzanne Smalley" unless they appear in the context
+    5. When citing, use markdown format: [Source Name](URL) where both the name and URL come from the context
+    
+    Provide a detailed, well-structured response that incorporates relevant information from the context.
+    If the context doesn't contain enough information, clearly state what information is missing.
     """)
     
     chain = (
