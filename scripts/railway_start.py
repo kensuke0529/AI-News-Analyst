@@ -14,6 +14,30 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
+def populate_database_if_needed():
+    """Populate database with initial data if needed"""
+    try:
+        from src.rag.database_manager import db_manager
+        
+        # Check if database has any data
+        existing_links = db_manager.get_existing_links()
+        
+        if len(existing_links) == 0:
+            logger.info("Database is empty, populating with initial data...")
+            from src.data_ingestion.extract_and_store import extract_and_store
+            
+            result = extract_and_store()
+            if result['status'] == 'success':
+                logger.info(f"[OK] Database populated with {result['new_articles']} articles")
+            else:
+                logger.warning(f"[WARNING] Database population had issues: {result.get('error', 'Unknown error')}")
+        else:
+            logger.info(f"[OK] Database already has {len(existing_links)} articles")
+            
+    except Exception as e:
+        logger.warning(f"[WARNING] Could not check/populate database: {e}")
+        logger.warning("App will start but may not have data available")
+
 def main():
     """Railway-optimized startup with proper PORT handling"""
     # Railway injects PORT environment variable - this is critical for healthchecks
@@ -21,6 +45,9 @@ def main():
     
     logger.info(f"Starting on Railway port: {port}")
     logger.info("PORT variable is required for Railway healthchecks to work")
+    
+    # Populate database if needed (for ChromaDB Cloud)
+    populate_database_if_needed()
     
     try:
         import uvicorn
