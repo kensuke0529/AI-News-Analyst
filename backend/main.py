@@ -240,3 +240,37 @@ def get_news():
         
     except Exception as e:
         return {"error": str(e)}
+
+@app.post("/api/admin/update-news")
+def update_news():
+    """Manually trigger news extraction (admin endpoint)"""
+    try:
+        from src.data_ingestion.extract_and_store import extract_and_store
+        
+        result = extract_and_store()
+        
+        if result.get('status') == 'success':
+            return {
+                "status": "success",
+                "message": "News updated successfully",
+                "new_articles": result.get('new_articles', 0),
+                "new_chunks": result.get('new_chunks', 0),
+                "total_articles": result.get('total_articles', 0)
+            }
+        elif result.get('status') == 'up_to_date':
+            return {
+                "status": "up_to_date",
+                "message": "Database is already up to date",
+                "total_articles": result.get('total_articles', 0)
+            }
+        else:
+            return {
+                "status": "error",
+                "message": result.get('error', 'Unknown error')
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to update news: {str(e)}"
+        }
