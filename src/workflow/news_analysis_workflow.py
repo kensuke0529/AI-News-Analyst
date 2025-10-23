@@ -97,6 +97,21 @@ def response_generation_node(state: State):
     """Generate response from retrieved documents"""
     llm = ChatOpenAI(model='gpt-4o-mini', api_key=openai_api_key, temperature=0)
     
+    # Get the context and question from state
+    context = state.get('retrieved_docs', '')
+    question = state.get('prompt', '')
+    
+    # Debug logging (controlled by environment variable)
+    debug_mode = os.getenv('RAG_DEBUG', 'false').lower() == 'true'
+    if debug_mode:
+        print(f"\n[DEBUG] Question: {question[:100]}...")
+        print(f"[DEBUG] Context length: {len(context)} characters")
+        print(f"[DEBUG] Context preview: {context[:300]}...")
+    
+    # Check if context is empty
+    if not context or len(context.strip()) < 10:
+        return {"response": "I apologize, but I couldn't retrieve any relevant information from the database. Please try rephrasing your question or contact support if this issue persists."}
+    
     prompt_template = ChatPromptTemplate.from_template("""
     You are an AI News Analyst. Use the following context to provide a comprehensive response.
     
@@ -105,35 +120,28 @@ def response_generation_node(state: State):
     
     User Question: {question}
     
-    CRITICAL RULES:
-    1. ONLY use information from the provided context above
-    2. DO NOT make up or hallucinate any information not in the context
-    3. DO NOT cite sources that are not explicitly mentioned in the context
-    4. If the context doesn't contain enough information to answer the question, say so clearly
+    IMPORTANT INSTRUCTIONS:
+    1. Carefully read the context provided above - it contains relevant news articles
+    2. Answer the question based on the information in the context
+    3. When you see SOURCE, TITLE, DATE, LINK, and CONTENT fields in the context, use that information
+    4. Cite sources using the LINK and TITLE provided in the context
+    5. Use markdown format for citations: [article title](URL)
     
-    SOURCE CITATION RULES:
-    1. ONLY cite sources that are explicitly mentioned in the context above
-    2. Use the exact source names and links provided in the context
-    3. If no sources are provided in the context, do NOT add any citations
-    4. NEVER make up source names like "The Record" or "Suzanne Smalley" unless they appear in the context
-    5. When citing, use markdown format: [Source Name](URL) where both the name and URL come from the context
+    ONLY if the context genuinely does not contain relevant information to answer the question,
+    then you may say the information is not available. But if there IS relevant information in
+    the context, you MUST use it to answer the question.
     
-    Provide a detailed, well-structured response that incorporates relevant information from the context.
-    If the context doesn't contain enough information, clearly state what information is missing.
+    Provide a detailed, well-structured response that incorporates the news information from the context.
     """)
     
-    chain = (
-        {
-            "context": lambda x: state['retrieved_docs'], 
-            "question": lambda x: state['prompt']
-        }
-        | prompt_template
-        | llm
-        | StrOutputParser()
-    )
+    # Direct invocation with explicit parameters
+    chain = prompt_template | llm | StrOutputParser()
+    final_response = chain.invoke({"context": context, "question": question})
     
-    response = chain.invoke({})
-    return {"response": response}
+    if debug_mode:
+        print(f"[DEBUG] Response length: {len(final_response)} characters")
+    
+    return {"response": final_response}
 
 def should_continue(state: State):
     """Determine which path to take based on route_choice"""
