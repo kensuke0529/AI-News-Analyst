@@ -23,6 +23,12 @@ CHROMA_TENANT = os.getenv("CHROMA_TENANT")
 CHROMA_DATABASE = os.getenv("CHROMA_DATABASE", "news-ai")
 USE_CHROMA_CLOUD = os.getenv("USE_CHROMA_CLOUD", "false").lower() == "true"
 
+# Supabase Configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon key
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")  # service role key
+USE_SUPABASE_VECTOR = os.getenv("USE_SUPABASE_VECTOR", "false").lower() == "true"
+
 # RAG Settings
 CHUNK_SIZE = 100
 CHUNK_OVERLAP = 10

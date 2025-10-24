@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from src.rag.database_manager import db_manager
+from src.rag.unified_database_manager import unified_db_manager
 from src.data_sources.wikipedia_search import wiki_search
 from dotenv import load_dotenv
 
@@ -54,8 +54,8 @@ def query_vector_db(prompt: str, persist_directory="./data/vector_db") -> str:
     Query the pre-populated vector DB - NO extraction/fetching here.
     This assumes the DB has been populated by the background extraction job.
     """
-    # Use the database manager to search for relevant documents
-    results = db_manager.search_documents(prompt, k=3)
+    # Use the unified database manager to search for relevant documents
+    results = unified_db_manager.search_documents(prompt, k=3)
     
     # Format with metadata for better attribution
     formatted_docs = []

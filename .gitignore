@@ -26,6 +26,7 @@ wheels/
 # Environment variables
 .env
 .env.local
+.env.supabase
 
 # IDEs
 .vscode/
@@ -61,3 +62,13 @@ storage/cache/*
 storage/logs/*
 storage/databases/*
 storage/daily_token_usage.json
+
+# Supabase setup files (contains sensitive project info)
+supabase_setup_hvfkkldyvuhluewqvkwn.sql
+
+# Migration scripts (temporary)
+scripts/migrate_chromadb_to_supabase.py
+scripts/test_your_supabase.py
+
+# Deployment setup (temporary)
+DEPLOYMENT_SETUP.md

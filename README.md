@@ -87,7 +87,7 @@ graph LR
     B --> D[MIT News]
     C --> E[Chunk & Embed]
     D --> E
-    E --> F[ChromaDB<br/>Vector Store]
+    E --> F[Supabase<br/>Vector Store]
     
     style A fill:#F5A623,color:#fff
     style B fill:#7ED321
@@ -102,7 +102,7 @@ graph LR
     B -->|Recent News| C[Query Vector DB]
     B -->|General Knowledge| D[Wikipedia API]
     
-    C --> E[ChromaDB<br/>Read-Only]
+    C --> E[Supabase<br/>Read-Only]
     D --> F[Article Content]
     
     E --> G[Response Generator<br/>GPT-4o-mini]
@@ -127,7 +127,7 @@ graph LR
 - **Background Extraction**: Periodic job fetches and processes news independently from queries
 - **Multi-Source RAG**: Retrieves from Techmeme and MIT News with source attribution
 - **Wikipedia Search**: Accesses general knowledge and historical information
-- **Vector Database**: ChromaDB for efficient document storage and retrieval
+- **Vector Database**: Supabase with pgvector for scalable document storage and retrieval
 - **LangGraph Workflow**: Orchestrates the query processing workflow
 - **Scheduled Updates**: Configurable extraction intervals (hourly, custom, or on-demand)
 - **Global Token Limiting**: Built-in daily token limits (5000 tokens/day) for cost control
